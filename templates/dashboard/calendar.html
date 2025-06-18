@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Lesson Calendar</title>
+
+  <!-- bootstrap link for calendar -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- FullCalendar CND Link calendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+
+  <!-- custom style of calendar to allow it to fit on page -->
+  <style>
+    #calendar {
+      max-width: 900px;
+      margin: 0 auto;
+      height: 700px;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">My Lesson Calendar</h2>
+    <div id="calendar"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+
+      if (calendarEl) {
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          height: 'auto',
+          events: '/dashboard/calendar/data/',
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek'
+          },
+          eventDidMount: function(info) {
+            const tooltip = new bootstrap.Tooltip(info.el, {
+                title: info.event.extendedProps.description || info.event.title,
+                placement: 'top',
+                trigger: 'hover',
+                container: 'body'
+            });
+          },
+          eventClick: function(info) {
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const rescheduleBtn = document.getElementById('rescheduleBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            modalTitle.innerText = info.event.title;
+            modalBody.innerText = new Date(info.event.start).toLocaleString();
+
+            const bookingId = info.event.extendedProps.booking_id;
+            rescheduleBtn.href = `/dashboard/reschedule/${bookingId}/`;
+            cancelBtn.href = `/dashboard/cancel/${bookingId}/`;
+
+            const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+            modal.show();
+          }
+        });
+
+        calendar.render();
+
+      }
+    });
+  </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Lesson</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                Lesson details go here
+            </div>
+            <div class="modal-footer">
+                <a id="rescheduleBtn" class="btn btn-primary">Reschedule</a>
+                <a id="cancelBtn" class="btn btn-danger">Cancel</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
