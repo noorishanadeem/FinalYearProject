@@ -29,6 +29,9 @@ class BookingForm(forms.ModelForm):
         if not (instructor and date and time):
             return
         
+        # for excluding current booking instance for rescheduling
+        qs = Booking.objects.exclude(id=self.instance.id if self.instance else None)
+        
         if not self.student:
             raise ValidationError("Student not set on BookingForm.")
 

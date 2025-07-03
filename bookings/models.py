@@ -18,3 +18,11 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"lesson with {self.instructor.username} on {self.date} at {self.time}" 
+    
+class InstructorAvailability(models.Model):
+    instructor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': 'instructor'})
+    date = models.DateField()
+    time = models.TimeField()
+
+    def __str__(self):
+        return f"{self.instructor.username} - {self.date} {self.time}"

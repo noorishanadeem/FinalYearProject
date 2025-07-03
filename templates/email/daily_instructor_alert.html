@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif;">
+    <div style="max-width:600px;margin:auto;padding:20px;border:1px solid #eee;border-radius:5px;">
+        <h2>Tomorrows Schedule</h2>
+        <p>Dear {{ instructor.username }},</p>
+        <p>Here are your lessons for tomorrow, {{ date|date: "F j, Y" }}:</p>
+        <ul>
+            {% for booking in bookings %}
+                <li>Student: {{ booking.student.username }} - Time: {{ booking.time }}</li>
+            {% endfor %}
+        </ul>
+        <hr />
+        <p>Have a great teaching day!</p>
+    </div>
+</body>
+</html>

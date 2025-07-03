@@ -32,10 +32,25 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 LOGIN_REDIRECT_URL = '/dashboard/'
 
+# email sending
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_POST = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'nadeemnoorisha0@gmail.com'
+EMAIL_HOST_PASSWORD = 'jthn giro dcgx tsbt'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+# to send reminders exactly 24 hours before lesson
+# to send tomorrows schedule to instructor
+CRONJOBS = [
+    ('0 * * * *', 'bookings.management.commands.send_reminders'),
+    ('0 18 * * *', 'dashboard.management.commands.send_reminders'),
+]
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_crontab',
     'accounts',
     'dashboard',
     'bookings',
