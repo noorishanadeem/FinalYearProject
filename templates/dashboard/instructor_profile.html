@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+
+    <a href="{% url 'edit_instructor_profile' %}" class="btn btn-outline-primary float-end mb-2"></a>
+    
+    <h2>{{instructor.get_full_name }}'s Profile</h2>
+    <ul class="list-group">
+        <li class="list-group-item"><strong>Username:</strong> {{ instructor.username }}</li>
+        <li class="list-group-item"><strong>Email:</strong> {{ instructor.email }}</li>
+        <li class="list-group-item"><strong>Date Joined:</strong> {{ instructor.date_joined }}</li>
+        <li class="list-group-item"><strong>Status:</strong> {{ instructor.is_active|yesno:"Active,Inactive" }}</li>
+    </ul>
+
+    <a href="{% url 'view_all_instructors' %}" class="btn btn-secondary mt-3">Back to Instructor List</a>
+
+</div>
+{% endblock %}

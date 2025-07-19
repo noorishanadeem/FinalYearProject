@@ -32,6 +32,9 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 LOGIN_REDIRECT_URL = '/dashboard/'
 
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+
 # email sending
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

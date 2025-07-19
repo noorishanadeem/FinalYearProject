@@ -38,8 +38,27 @@
     
 
     <!-- scripts -->
+    <!-- Bootstrap JS (needed for tooltips) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    
     <script>
+        function getCookie(name) {
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const calendarEl = document.getElementById('calendar');
 
@@ -49,16 +68,118 @@
                     height: 'auto',
                     events: '/dashboard/admin/calendar/data/',
                     headerToolbar: {
-                        left: 'prev, next today',
-                        center: 'title', 
+                        left: 'prev,next today',
+                        center: 'title',
                         right: 'dayGridMonth,timeGridWeek,listWeek'
+                    },
+                    eventClick: function(info) {
+                        const title = info.event.title;
+                        const description = info.event.extendedProps.description || 'No details';
+                        const status = info.event.extendedProps.status || 'Unknown';
+                        const bookingId = info.event.extendedProps.booking_id;
+
+                        // fill modal fields
+                        document.getElementById('modalTitle').innerText = title;
+                        document.getElementById('modalDescription').innerText = description;
+                        document.getElementById('modalStatus').innerText = status;
+
+                        // sets booking id on buttons
+                        document.getElementById('cancelBtn').setAttribute('data-id', bookingId);
+                        document.getElementById('completeBtn').setAttribute('data-id', bookingId);
+
+                        document.getElementById('editBtn').setAttribute('data-id', bookingId);
+
+                        // shows/hides buttons based on status
+                        if (status.toLowerCase() === 'booked') {
+                            document.getElementById('cancelBtn').classList.remove('d-none');
+                            document.getElementById('completeBtn').classList.remove('d-none');
+                        } else {
+                            document.getElementById('cancelBtn').classList.add('d-none');
+                            document.getElementById('completeBtn').classList.add('d-none');
+                        }
+
+                        // logic to toggle edit button - shows/hides edit button based on status
+                        if (status.toLowerCase() === 'booked') {
+                            document.getElementById('editBtn').classList.remove('d-none');
+                        } else {
+                            document.getElementById('editBtn').classList.add('d-none');
+                        }
+
+                        // shows modal
+                        const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+                        modal.show();
+                    },
+                    eventDidMount: function(info) {
+                        new bootstrap.Tooltip(info.el, {
+                            title: info.event.extendedProps.description || '',
+                            placement: 'top',
+                            trigger: 'hover',
+                            container: 'body'
+                        });
                     }
                 });
 
                 calendar.render();
+
+                // button handlers
+                document.getElementById('cancelBtn').addEventListener('click', function () {
+                    const bookingId = this.getAttribute('data-id');
+                    fetch(`/dashboard/admin/cancel-booking/${bookingId}/`, {
+                        method: 'POST', 
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                        },
+                    }).then(() => {
+                        location.reload();
+                    });
+                });
+
+                document.getElementById('completeBtn').addEventListener('click', function () {
+                    const bookingId = this.getAttribute('data-id');
+                    fetch(`/dashboard/admin/complete-booking/${bookingId}/`, {
+                        method: 'POST', 
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                        },
+                    }).then(() => {
+                        location.reload();
+                    });
+                });
+
+                document.getElementById('editBtn').addEventListener('click', function () {
+                    const bookingId = this.getAttribute('data-id');
+                    window.location.href = `/dashboard/admin/edit-booking/${bookingId}/`;
+                });
             }
         });
+        
     </script>
+
+    <!-- Booking Details Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookingModalLabel">Booking Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Title:</strong> <span id="modalTitle"></span></p>
+                    <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+                    <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary d-none" id="editBtn">Edit Booking</button>
+
+                    <button type="button" class="btn btn-danger d-none" id="cancelBtn">Cancel Booking</button>
+                    <button type="button" class="btn btn-success d-none" id="completeBtn">Mark as Completed</button>
+
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     
 </body>
 </html>

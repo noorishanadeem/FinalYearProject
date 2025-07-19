@@ -18,8 +18,11 @@ from django.contrib import admin
 from django.urls import path, include 
 from django.contrib.auth import views as auth_views
 from accounts.views import logout_view
+from django.shortcuts import redirect
+from accounts.views import dashboard_redirect
 
 urlpatterns = [
+    path('', lambda request: redirect('login')),
     path('admin/', admin.site.urls),
     path('accounts/login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
     path('accounts/logout/', logout_view, name='logout'),

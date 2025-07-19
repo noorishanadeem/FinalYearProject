@@ -5,6 +5,8 @@ from accounts.models import CustomUser
 from django.core.exceptions import ValidationError
 from datetime import datetime
 
+from bookings.models import Booking
+
 class BookingForm(forms.ModelForm):
     class Meta:
         model = Booking
@@ -41,3 +43,4 @@ class BookingForm(forms.ModelForm):
         
         if Booking.objects.filter(instructor=instructor, date=date, time=time, status='booked').exists():
             raise ValidationError(f"{instructor.username} is already booked at this time.")
+        

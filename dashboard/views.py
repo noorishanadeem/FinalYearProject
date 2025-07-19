@@ -25,6 +25,10 @@ from django.core.mail import EmailMultiAlternatives
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 
+from django.contrib.auth import get_user_model
+
+from .forms import StudentProfileForm, InstructorProfileForm
+
 @login_required 
 def calendar_view(request):
     return render(request, 'dashboard/calendar.html')
@@ -271,6 +275,7 @@ def admin_calendar_data(request):
             "color": color,
             "description": f"{booking.status.capitalize()} lesson",
             "status": booking.status.capitalize(),
+            "booking_id": booking.id,
         })
 
     return JsonResponse(events, safe=False)
@@ -305,6 +310,80 @@ def admin_delete_booking(request, booking_id):
     messages.success(request, "Booking Deleted.")
     return redirect('admin_dashboard')
 
+@staff_member_required
+def admin_edit_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.method == 'POST':
+        form = BookingForm(request.POST, instance=booking, student=booking.student)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Booking updated successfully.")
+            return redirect('admin_dashboard')
+    else:
+        form = BookingForm(instance=booking, student=booking.student)
+
+    return render(request, 'dashboard/admin_edit_booking.html', {
+        'form': form,
+        'booking': booking
+    })
+
+
+User = get_user_model()
+
+@staff_member_required
+def view_all_students(request):
+    students = User.objects.filter(role='student')
+    return render(request, 'dashboard/view_all_students.html', {'students': students})
+
+@staff_member_required
+def view_all_instructors(request):
+    instructors = User.objects.filter(role='instructor')
+    return render(request, 'dashboard/view_all_instructors.html', {'instructors': instructors})
+
+
+@staff_member_required
+def student_profile(request, student_id):
+    student = get_object_or_404(User, id=student_id, role='student')
+    return render(request, 'dashboard/student_profile.html', {'student': student})
+
+@staff_member_required
+def instructor_profile(request, instructor_id):
+    instructor = get_object_or_404(User, id=instructor_id, role='instructor')
+    return render(request, 'dashboard/instructor_profile.html', {'instructor': instructor})
+
+
 @login_required
 def dashboard_home_redirect(request):
-    return redirect('dashboard_redirect')
+    user = request.user
+
+    if user.is_superuser or user.is_staff:
+        return redirect('admin_dashboard')
+    elif hasattr(user, 'role'):
+        if user.role == 'instructor':
+            return redirect('instructor_dashboard')
+        elif user.role == 'student':
+            return redirect('student_dashboard')
+        
+    return redirect('login')
+
+
+@login_required
+def edit_student_profile(request):
+    form = StudentProfileForm(instance=request.user)
+    if request.method == 'POST':
+        form = StudentProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('student_profile')
+    return render(request, 'dashboard/edit_student_profile.html', {'form': form})
+    
+@login_required
+def edit_instructor_profile(request):
+    form = InstructorProfileForm(instance=request.user)
+    if request.method == 'POST':
+        form = InstructorProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('instructor_profile')
+        return render(request, 'dashboard/edit_instructor_profile.html', {'form': form})

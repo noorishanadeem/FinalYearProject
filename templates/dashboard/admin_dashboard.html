@@ -1,3 +1,5 @@
+<a href="{% url 'logout' %}" class="btn btn-outline-danger float-end">Logout</a>
+
 {% load static %}
 
 <!DOCTYPE html>
@@ -10,6 +12,11 @@
 <body class="bg-light">
 <div class="container mt-4">
     <h2 class="mb-4">Admin Dashboard</h2>
+
+    <div class="mb-4">
+        <a href="{% url 'view_all_students' %}" class="btn btn-outline-secondary me-2">View All Students</a>
+        <a href="{% url 'view_all_instructors' %}" class="btn btn-outline-secondary">View All Instructors</a>
+    </div>
 
     <!-- Admin Calendar -->
      <a href="{% url 'admin_calendar_view' %}" class="btn btn-outline-primary mb-3">View Admin Calendar</a>
@@ -88,14 +95,14 @@
                         {% if booking.status != 'cancelled' %}
                         <form method="post" action="{% url 'admin_cancel_booking' booking.id %}" style="display:inline">
                             {% csrf_token %}
-                            <button class="btn btn-danger btn-sm">Cancel</button>
+                            <button class="btn btn-secondary btn-sm">Cancel</button>
                         </form>
                         {% endif %}
 
                         {% if booking.status != 'completed' %}
                         <form method="post" action="{% url 'admin_complete_booking' booking.id %}" style="display:inline;">
                             {% csrf_token %}
-                            <button class="btn btn-danger btn-sm">Mark Completed</button>
+                            <button class="btn btn-success btn-sm">Mark Completed</button>
                         </form>
                         {% endif %}
 

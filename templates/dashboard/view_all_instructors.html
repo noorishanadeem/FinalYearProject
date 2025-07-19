@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>All Instructors</h2>
+    <table class="table table-hover table-striped table-bordered mt-3">
+        <thead class="table-dark">
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Full Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Profile</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for instructor in instructors %}
+          <tr>
+            <td>{{ instructor.username }}</td>
+            <td>{{ instructor.get_full_name }}</td>
+            <td>{{ instructor.email }}</td>
+            <td>
+              <a href="{% url 'instructor_profile' instructor.id %}" class="btn btn-sm btn-outline-info">
+                View Profile
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center">No instructors found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>      
+</div>
+{% endblock %}
