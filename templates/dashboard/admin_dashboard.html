@@ -65,13 +65,75 @@
                 <td>{{ lesson.instructor.username }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="4">No upcoming lessons</td></tr>
+                <tr><td colspan="4">No upcoming lessons</td></tr>
             {% endfor %}
         </tbody>
 
-        <!-- all bookings table -->
+
+        <!-- all bookings table + search/filter form -->
         <table class="table table-boarded">
+            <!-- filter/search form -->
+             <br>
+            <form method="get" class="row g-2 mb-3">
+                <div class="col-md-3">
+                    <input type="text" name="student" class="form-control" placeholder="Search student name or email" value="{{ request.GET.student }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="instructor" class="form-select">
+                        <option value="">All Instructors</option>
+                        {% for instructor in instructors %}
+                            <option value="{{ instructor.id }}" {% if request.GET.instructor == instructor.id|add:"" %}selected{% endif %}>
+                                {{ instructor.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="booked" {% if request.GET.status == "booked" %}selected{% endif %}>Booked</option>
+                        <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if request.GET.status == "cancelled" %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary w-100">Reset</a>
+                </div>
+            </form>
+
             <br>
+
+            <!-- displays what filtered/searched for -->
+            {% if request.GET.student or request.GET.instructor or request.GET.status %}
+                <div class="alert alert-info">
+                    <strong>Showing results for:</strong>
+                    <ul class="mb-0">
+                        {% if request.GET.student %}
+                            <li><strong>Student:</strong> {{ request.GET.student }}</li>
+                        {% endif %}
+                        {% if request.GET.instructor %}
+                            <li>
+                                <strong>Instructor:</strong>
+                                {% for inst in instructors %}
+                                    {% if inst.id|stringformat:"s" == request.GET.instructor %}
+                                        {{ inst.username }}
+                                    {% endif %}
+                                {% endfor %}
+                            </li>
+                        {% endif %}
+                        {% if request.GET.status %}
+                            <li><strong>Status:</strong> {{ request.GET.status|capfirst }}</li>
+                        {% endif %}
+                    </ul>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-sm btn-outline-dark mt-2">Clear Filters</a>
+                </div>
+            {% endif %}
+            
+            <br>
+
             <h4> All Bookings List</h4>
             <thead>
                 <tr>

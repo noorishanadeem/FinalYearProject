@@ -29,6 +29,9 @@ from django.contrib.auth import get_user_model
 
 from .forms import StudentProfileForm, InstructorProfileForm
 
+from django.db.models import Q
+from accounts.models import CustomUser
+
 @login_required 
 def calendar_view(request):
     return render(request, 'dashboard/calendar.html')
@@ -234,17 +237,42 @@ def instructor_calendar_data(request):
         
     return JsonResponse(events, safe=False)
 
+
 @staff_member_required
 def admin_dashboard(request):
-    from bookings.models import Booking
-    from accounts.models import CustomUser
+    # Get filter input from GET parameters
+    student_query = request.GET.get('student', '').strip()
+    instructor_id = request.GET.get('instructor', '')
+    status = request.GET.get('status', '')
 
+    # Start with all bookings
+    bookings = Booking.objects.select_related('student', 'instructor').all()
+
+    # Filter by student name/email
+    if student_query:
+        bookings = bookings.filter(
+            Q(student__username__icontains=student_query) |
+            Q(student__email__icontains=student_query)
+        )
+
+    # Filter by instructor
+    if instructor_id:
+        bookings = bookings.filter(instructor__id=instructor_id)
+
+    # Filter by status
+    if status:
+        bookings = bookings.filter(status=status)
+
+    # Order filtered bookings
+    bookings = bookings.order_by('-date', '-time')
+
+    # Stats and upcoming
     total_students = CustomUser.objects.filter(role='student').count()
     total_instructors = CustomUser.objects.filter(role='instructor').count()
     total_bookings = Booking.objects.count()
 
     upcoming = Booking.objects.filter(date__gte=timezone.now().date()).order_by('date', 'time')[:5]
-    bookings = Booking.objects.all().order_by('-date', '-time')
+    instructors = CustomUser.objects.filter(role='instructor')
 
     return render(request, 'dashboard/admin_dashboard.html', {
         'total_students': total_students,
@@ -252,6 +280,8 @@ def admin_dashboard(request):
         'total_bookings': total_bookings,
         'upcoming': upcoming,
         'bookings': bookings,
+        'instructors': instructors,
+        'request': request
     })
 
 @staff_member_required
