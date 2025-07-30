@@ -42,6 +42,9 @@ from datetime import datetime
 from collections import Counter
 import calendar
 
+from datetime import date, timedelta
+
+
 @login_required 
 def calendar_view(request):
     return render(request, 'dashboard/calendar.html')
@@ -216,7 +219,21 @@ def instructor_dashboard(request):
         return render(request, '403.html')
     
     instructor = request.user
-    today = timezone.now().date()
+    today = date.today()
+
+    # for weaking hours calculations
+    start_of_week = today - timedelta(days=today.weekday()) #Monday
+    end_of_week = start_of_week + timedelta(days=6) #Sunday
+
+    # count completed lessons this week
+    weekly_hours = Booking.objects.filter(
+        instructor=request.user,
+        status='completed',
+        date__range=[start_of_week, end_of_week]
+    ).count()
+
+    # for calculating pay for that week
+    weekly_pay = weekly_hours * 55
 
     # query to count lessons
     total_bookings = Booking.objects.filter(instructor=instructor).count()
@@ -231,6 +248,8 @@ def instructor_dashboard(request):
         'completed_lessons': completed_lessons,
         'cancelled_lessons':cancelled_lessons,
         'todays_lessons': todays_lessons,
+        'weekly_hours': weekly_hours,
+        'weekly_pay': weekly_pay,
     })
 
 @login_required
