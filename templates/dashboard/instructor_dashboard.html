@@ -1,4 +1,8 @@
-<a href="{% url 'logout' %}" class="btn btn-outline-danger float-end">Logout</a>
+<!-- Logout Button -->
+<div class="d-flex justify-content-end me-3 mt-2">
+    <a href="{% url 'logout' %}" class="btn btn-outline-danger">Logout</a>
+</div>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +16,7 @@
 <body class="bg-light">
 
 <div class="container mt-4">
-    <h2>Instructor Dashboard</h2>
+    <h1>Instructor Dashboard</h1>
 
     <a href="{% url 'instructor_calendar' %}" class="btn btn-outline-primary mb-3">View My Calendar</a>
     <a href="{% url 'instructor_students_list' %}" class="btn btn-outline-secondary mb-3">View My Students</a>
@@ -23,53 +27,56 @@
 </div>
 
 <!-- summary cards -->
-<div class="row mb-4">
+<div class="container mt-4">
 
-    <div class="col-md-4">
-        <a href="{% url 'instructor_lessons_list' 'total' %}" class="text-decoration-none">
-            <div class="card bg-primary text-white text-center">
-                <div class="card-body">
-                    <h5 class="card-title">Total Lessons</h5>
-                    <p class="fs-4">{{ total_bookings }}</p>
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <a href="{% url 'instructor_lessons_list' 'total' %}" class="text-decoration-none">
+                <div class="card bg-primary text-white text-center shadow-sm rounded-4 p-2">
+                    <div class="card-body py-2">
+                        <h6 class="card-title mb-1">Total Lessons</h6>
+                        <p class="fs-5 mb-0">{{ total_bookings }}</p>
+                    </div>
                 </div>
-            </div>
-        </a>
-    </div>
+            </a>
+        </div>
 
-    <div class="col-md-3">
-        <a href="{% url 'instructor_lessons_list' 'upcoming' %}" class="text-decoration-none">
-            <div class="card text-white bg-secondary text-center">
-                <div class="card-body">
-                    <h5 class="card-title">Upcoming</h5>
-                    <p class="fs-4">{{ upcoming_lessons }}</p>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'instructor_lessons_list' 'upcoming' %}" class="text-decoration-none">
+                <div class="card bg-secondary text-white text-center shadow-sm rounded-4 p-2">
+                    <div class="card-body py-2">
+                        <h6 class="card-title mb-1">Upcoming</h6>
+                        <p class="fs-5 mb-0">{{ upcoming_lessons }}</p>
+                    </div>
                 </div>
-            </div>
-        </a>
-    </div>
+            </a>
+        </div>
 
-    <div class="col-md-4">
-        <a href="{% url 'instructor_lessons_list' 'completed' %}" class="text-decoration-none">
-            <div class="card bg-success text-white text-center">
-                <div class="card-body">
-                    <h5 class="card-title">Completed</h5>
-                    <p class="fs-4">{{ completed_lessons }}</p>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'instructor_lessons_list' 'completed' %}" class="text-decoration-none">
+                <div class="card bg-success text-white text-center shadow-sm rounded-4 p-2">
+                    <div class="card-body py-2">
+                        <h6 class="card-title mb-1">Completed</h6>
+                        <p class="fs-5 mb-0">{{ completed_lessons }}</p>
+                    </div>
                 </div>
-            </div>
-        </a>
-    </div>
+            </a>
+        </div>
 
-    <div class="col-md-4">
-        <a href="{% url 'instructor_lessons_list' 'cancelled' %}" class="text-decoration-none">
-            <div class="card bg-danger text-white text-center">
-                <div class="card-body">
-                    <h5 class="card-title">Cancelled</h5>
-                    <p class="fs-4">{{ cancelled_lessons }}</p>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'instructor_lessons_list' 'cancelled' %}" class="text-decoration-none">
+                <div class="card bg-danger text-white text-center shadow-sm rounded-4 p-2">
+                    <div class="card-body py-2">
+                        <h6 class="card-title mb-1">Cancelled</h6>
+                        <p class="fs-5 mb-0">{{ cancelled_lessons }}</p>
+                    </div>
                 </div>
-            </div>
-        </a>
+            </a>
+        </div>
     </div>
 
 </div>
+
 
 <style>
     .small-card {
@@ -81,38 +88,43 @@
     }
 </style>
 
-<h4>Todays Lessons</h4>
-<table class="table table-boarded table-striped">
-    <thead>
-        <tr>
-            <th>Time</th>
-            <th>Student</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for lesson in todays_lessons %}
-        <tr>
-            <td>{{ lesson.time }}</td>
-            <td>{{ lesson.student.username }}</td>
-            <td>
-                {% if lesson.status == "booked" %}
-                    <span class="badge bg-warning">{{ lesson.status|capfirst }}</span>
-                {% elif lesson.status == "completed" %}
-                    <span class="badge bg-success">{{ lesson.status|capfirst }}</span>
-                {% elif lesson.status == "cancelled" %}
-                    <span class="badge bg-danger">{{ lesson.status|capfirst }}</span>
-                {% else %}
-                    <span class="badge bg-secondary">{{ lesson.status|capfirst }}</span>
-                {% endif %}
+<br/>
 
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3">No lessons today.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container mt-4">
+    <h4>Todays Lessons</h4>
+    <table class="table table-boarded table-striped">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Student</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in todays_lessons %}
+            <tr>
+                <td>{{ lesson.time }}</td>
+                <td>{{ lesson.student.username }}</td>
+                <td>
+                    {% if lesson.status == "booked" %}
+                        <span class="badge bg-warning">{{ lesson.status|capfirst }}</span>
+                    {% elif lesson.status == "completed" %}
+                        <span class="badge bg-success">{{ lesson.status|capfirst }}</span>
+                    {% elif lesson.status == "cancelled" %}
+                        <span class="badge bg-danger">{{ lesson.status|capfirst }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ lesson.status|capfirst }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No lessons today.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- hours completed this week -->
 
 
 </body>

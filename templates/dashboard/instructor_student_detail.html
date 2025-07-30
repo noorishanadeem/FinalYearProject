@@ -16,28 +16,28 @@
 
     <br>
 
-        <!-- Lesson Summary -->
-        <div class="mb-4">
-            <h5>Lesson Summary</h5>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Total Lessons
-                    <span class="badge bg-primary rounded-pill">{{ bookings|length }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Booked Lessons
-                    <span class="badge bg-warning rounded-pill">{{ status_counts.booked|default:0 }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Completed Lessons
-                    <span class="badge bg-success rounded-pill">{{ status_counts.completed|default:0 }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Cancelled Lessons
-                    <span class="badge bg-danger rounded-pill">{{ status_counts.cancelled|default:0 }}</span>
-                </li>
-            </ul>
-        </div>
+    <!-- Lesson Summary -->
+    <div class="mb-4">
+        <h5>Lesson Summary</h5>
+        <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Total Lessons
+                <span class="badge bg-primary rounded-pill">{{ bookings|length }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Booked Lessons
+                <span class="badge bg-warning rounded-pill">{{ status_counts.booked|default:0 }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Completed Lessons
+                <span class="badge bg-success rounded-pill">{{ status_counts.completed|default:0 }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Cancelled Lessons
+                <span class="badge bg-danger rounded-pill">{{ status_counts.cancelled|default:0 }}</span>
+            </li>
+        </ul>
+    </div>
 
     <!-- Pie chart -->
     <div class="mb-4">
@@ -73,7 +73,17 @@
             <tr>
                 <td>{{ lesson.date }}</td>
                 <td>{{ lesson.time }}</td>
-                <td>{{ lesson.status|capfirst }}</td>
+                <td>
+                    {% if lesson.status == "booked" %}
+                        <span class="badge bg-warning">{{ lesson.status|capfirst }}</span>
+                    {% elif lesson.status == "completed" %}
+                        <span class="badge bg-success">{{ lesson.status|capfirst }}</span>
+                    {% elif lesson.status == "cancelled" %}
+                        <span class="badge bg-danger">{{ lesson.status|capfirst }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ lesson.status|capfirst }}</span>
+                    {% endif %}
+                </td>
             </tr>
             {% empty %}
             <tr><td colspan="3">No Lessons Found.</td></tr>

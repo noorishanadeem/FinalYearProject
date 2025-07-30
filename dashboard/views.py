@@ -38,6 +38,10 @@ from collections import Counter
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
 
+from datetime import datetime
+from collections import Counter
+import calendar
+
 @login_required 
 def calendar_view(request):
     return render(request, 'dashboard/calendar.html')
@@ -384,10 +388,15 @@ def instructor_student_detail(request, student_id):
     student = get_object_or_404(CustomUser, id=student_id, role='student')
     bookings = Booking.objects.filter(instructor=request.user, student=student).order_by('-date', '-time')
 
+    instructor = request.user
+
     lessons = Booking.objects.filter(instructor=request.user, student=student)
 
     # counts bookings by status
     status_counts = Counter(bookings.values_list('status', flat=True))
+
+    # filtered lessons for chart: only completed ones
+    completed_lessons = bookings.filter(status='completed')
 
     # bar chart: lessons per month
     monthly_counts = (bookings
@@ -400,6 +409,26 @@ def instructor_student_detail(request, student_id):
     months = [entry['month'].strftime('%b %Y') for entry in monthly_counts]
     lesson_counts = [entry['total'] for entry in monthly_counts]
 
+    # compute counts
+    status_counts = {
+        'booked': lessons.filter(status='booked').count(),
+        'completed': lessons.filter(status='completed').count(),
+        'cancelled': lessons.filter(status='cancelled').count(),
+    }
+
+    # chart data from completed lessons only
+    completed_lessons = bookings.filter(status='completed')
+    monthly_counts = (
+        completed_lessons
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+
+    month = [entry['month'].strftime('%b %Y') for entry in monthly_counts]
+    lesson_counts = [entry['count'] for entry in monthly_counts]
+
     return render(request, 'dashboard/instructor_student_detail.html', {
         'student': student,
         'lessons': lessons,
@@ -407,6 +436,7 @@ def instructor_student_detail(request, student_id):
         'status_counts': status_counts,
         'months': months,
         'lesson_counts': lesson_counts,
+        'request': request
     })
 
 @staff_member_required
