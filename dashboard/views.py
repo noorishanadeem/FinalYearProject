@@ -32,6 +32,12 @@ from .forms import StudentProfileForm, InstructorProfileForm
 from django.db.models import Q
 from accounts.models import CustomUser
 
+from django.core.paginator import Paginator
+
+from collections import Counter
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
+
 @login_required 
 def calendar_view(request):
     return render(request, 'dashboard/calendar.html')
@@ -205,7 +211,23 @@ def instructor_dashboard(request):
     if request.user.role != 'instructor':
         return render(request, '403.html')
     
-    return render(request, 'dashboard/instructor_dashboard.html')
+    instructor = request.user
+    today = timezone.now().date()
+
+    # query to count lessons
+    total_bookings = Booking.objects.filter(instructor=instructor).count()
+    upcoming_lessons = Booking.objects.filter(instructor=instructor, date__gte=timezone.now().date()).count()
+    completed_lessons = Booking.objects.filter(instructor=instructor, status='completed').count()
+    cancelled_lessons = Booking.objects.filter(instructor=instructor, status='cancelled').count()
+    todays_lessons = Booking.objects.filter(instructor=instructor, date=today).order_by('time')
+    
+    return render(request, 'dashboard/instructor_dashboard.html', {
+        'total_bookings': total_bookings,
+        'upcoming_lessons': upcoming_lessons,
+        'completed_lessons': completed_lessons,
+        'cancelled_lessons':cancelled_lessons,
+        'todays_lessons': todays_lessons,
+    })
 
 @login_required
 def instructor_calendar(request):
@@ -237,6 +259,35 @@ def instructor_calendar_data(request):
         
     return JsonResponse(events, safe=False)
 
+@login_required
+def instructor_lessons_list(request, filter_type):
+    if request.user.role != 'instructor':
+        return render(request, '403.html')
+    
+    instructor = request.user
+    today = timezone.now().date()
+
+    if filter_type == 'total':
+        lessons = Booking.objects.filter(instructor=instructor)
+        title = "All Lessons"
+    elif filter_type == 'upcoming':
+        lessons = Booking.objects.filter(instructor=instructor, date__gte=today, status='booked')
+        title = "Upcoming Lessons"
+    elif filter_type == 'completed':
+        lessons = Booking.objects.filter(instructor=instructor, status='completed')
+        title = "Completed Lessons"
+    elif filter_type == 'cancelled':
+        lessons = Booking.objects.filter(instructor=instructor, status='cancelled')
+        title = "Cancelled Lessons"
+    else:
+        return render(request, '404.html')
+    
+    lessons = lessons.order_by('-date', '-time')
+
+    return render(request, 'dashboard/instructor_lesson_list.html', {
+        'title': title,
+        'lessons': lessons,
+    })
 
 @staff_member_required
 def admin_dashboard(request):
@@ -245,7 +296,7 @@ def admin_dashboard(request):
     instructor_id = request.GET.get('instructor', '')
     status = request.GET.get('status', '')
 
-    # Start with all bookings
+    # Start with all bookings - base queryset
     bookings = Booking.objects.select_related('student', 'instructor').all()
 
     # Filter by student name/email
@@ -309,6 +360,54 @@ def admin_calendar_data(request):
         })
 
     return JsonResponse(events, safe=False)
+
+@login_required
+def instructor_students_list(request):
+    if request.user.role != 'instructor':
+        return render(request, '403.html')
+
+    students = CustomUser.objects.filter(
+        role='student',
+        student_bookings__instructor=request.user
+    ).distinct()
+
+    return render(request, 'dashboard/instructor_students_list.html', {
+        'students': students
+    })
+
+
+@login_required
+def instructor_student_detail(request, student_id):
+    if request.user.role != 'instructor':
+        return render(request, '403.html')
+    
+    student = get_object_or_404(CustomUser, id=student_id, role='student')
+    bookings = Booking.objects.filter(instructor=request.user, student=student).order_by('-date', '-time')
+
+    lessons = Booking.objects.filter(instructor=request.user, student=student)
+
+    # counts bookings by status
+    status_counts = Counter(bookings.values_list('status', flat=True))
+
+    # bar chart: lessons per month
+    monthly_counts = (bookings
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(total=Count('id'))
+        .order_by('month'))
+    
+    # prepares data for chart
+    months = [entry['month'].strftime('%b %Y') for entry in monthly_counts]
+    lesson_counts = [entry['total'] for entry in monthly_counts]
+
+    return render(request, 'dashboard/instructor_student_detail.html', {
+        'student': student,
+        'lessons': lessons,
+        'bookings': bookings,
+        'status_counts': status_counts,
+        'months': months,
+        'lesson_counts': lesson_counts,
+    })
 
 @staff_member_required
 def admin_calendar_view(request):

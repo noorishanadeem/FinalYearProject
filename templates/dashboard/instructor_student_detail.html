@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Student Details</h2>
+    <a href="{% url 'instructor_students_list' %}" class="btn btn-secondary mb-3">Back to Student List</a>
+
+    <!-- Student Info -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5><strong>{{ student.get_full_name }}</strong></h5>
+            <br>
+            <p><strong>Username: </strong> {{ student.username }}</p>
+            <p><strong>Email: </strong> {{ student.email }}</p>
+        </div>
+    </div>
+
+    <br>
+
+        <!-- Lesson Summary -->
+        <div class="mb-4">
+            <h5>Lesson Summary</h5>
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Total Lessons
+                    <span class="badge bg-primary rounded-pill">{{ bookings|length }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Booked Lessons
+                    <span class="badge bg-warning rounded-pill">{{ status_counts.booked|default:0 }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Completed Lessons
+                    <span class="badge bg-success rounded-pill">{{ status_counts.completed|default:0 }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Cancelled Lessons
+                    <span class="badge bg-danger rounded-pill">{{ status_counts.cancelled|default:0 }}</span>
+                </li>
+            </ul>
+        </div>
+
+    <!-- Pie chart -->
+    <div class="mb-4">
+        <h5>Lesson Status Chart</h5>
+        <canvas id="lessonStatusChart" width="400" height="250"></canvas>
+    </div>
+
+    <!-- Bar chart for monthly summary -->
+    <div class="mb-4">
+        <h5>Lessons per Month</h5>
+        <canvas id="monthlyLessonsChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Line chart for lessons over time -->
+    <div class="mb-4">
+        <h5>Lessons Over Time</h5>
+        <canvas id="lessonsOverTimeChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Lesson Table -->
+    <br>
+    <h5>Lessons with {{ student.get_full_name }}</h5>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in lessons %}
+            <tr>
+                <td>{{ lesson.date }}</td>
+                <td>{{ lesson.time }}</td>
+                <td>{{ lesson.status|capfirst }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No Lessons Found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+<!-- Chart.js DataLabels Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+<!-- pie chart script -->
+<script>
+    Chart.register(ChartDataLabels);
+    
+    const ctx = document.getElementById('lessonStatusChart').getContext('2d');
+    const lessonStatusChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Booked', 'Completed', 'Cancelled'],
+            datasets: [{
+                label: 'Lesson Status',
+                data: [
+                    {{ status_counts.booked|default:0 }},
+                    {{ status_counts.completed|default:0 }},
+                    {{ status_counts.cancelled|default:0 }}
+                ],
+                backgroundColor: [
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(220, 53, 69, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                datalabels: {
+                    formatter: (value, context) => {
+                        const total = context.chart._metasets[0].total;
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${percentage}%`;
+                    },
+                    color: '#fff',
+                    font: {
+                        weight: 'bold'
+                    }
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Bar chart
+    const barCtx = document.getElementById('monthlyLessonsChart').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Lessons',
+                data: {{ lesson_counts|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+    
+    // Line chart
+    const lineCtx = document.getElementById('lessonsOverTimeChart').getContext('2d');
+    new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Lessons Over Time',
+                data: {{ lesson_counts|safe }},
+                fill: false,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+{% endblock %}

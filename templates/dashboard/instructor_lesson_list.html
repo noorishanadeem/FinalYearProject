@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h3>{{ title }}</h3>
+    <a href="{% url 'instructor_dashboard' %}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Student</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in lessons %}
+            <tr>
+                <td>{{ lesson.date }}</td>
+                <td>{{ lesson.time }}</td>
+                <td>{{ lesson.student.username }}</td>
+                <td>
+                    <span class="badge 
+                        {% if lesson.status == 'booked' %}bg-warning
+                        {% elif lesson.status == 'completed' %}bg-success
+                        {% elif lesson.status == 'cancelled' %}bg-danger
+                        {% else %}bg-secondary
+                        {% endif %}
+                    ">
+                        {{ lesson.status|capfirst }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No Lessons Found</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
