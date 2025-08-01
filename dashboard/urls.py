@@ -6,6 +6,8 @@ urlpatterns = [
     path('instructor/', views.instructor_dashboard, name='instructor_dashboard'),
     path('admin/', views.admin_dashboard, name='admin_dashboard'),
 
+    path('student/profile/', views.student_profile_view, name='student_profile'),
+
     path('admin/calendar/', views.admin_calendar_view, name='admin_calendar_view'),
     path('admin/calendar/data/', views.admin_calendar_data, name='admin_calendar_data'),
     path('admin/complete-booking/<int:booking_id>/', views.admin_complete_booking, name='admin_complete_booking'),
@@ -15,7 +17,8 @@ urlpatterns = [
     path('admin/students/', views.view_all_students, name='view_all_students'),
     path('admin/instructor/', views.view_all_instructors, name='view_all_instructors'),
     path('admin/student/<int:student_id>/', views.student_profile, name='student_profile'),
-    path('admin/instructor/<int:Instructor_id>/', views.instructor_profile, name='instructor_profile'),
+    path('admin/instructor/<int:instructor_id>/', views.instructor_profile, name='instructor_profile'),
+    path('admin/instructor/edit/<int:instructor_id>/', views.edit_instructor_profile, name='edit_instructor_profile'),
 
     path('cancel-booking/<int:booking_id>/', views.cancel_booking, name='cancel_booking'),
     path('book-lesson/', views.book_lesson, name='book_lesson'),

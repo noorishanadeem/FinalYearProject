@@ -14,7 +14,7 @@
         <li class="list-group-item"><strong>status:</strong> {{ student.is_active|yesno:"Active,Inactive" }}</li>
     </ul>
 
-    <a href="{% url 'view_all_students' %}" class="btn btn-secondary mt-3">Back to Student List</a>
+    <a href="{% url 'student_dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
     
 </div>
 {% endblock %}

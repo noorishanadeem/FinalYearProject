@@ -1,6 +1,7 @@
 <a href="{% url 'logout' %}" class="btn btn-outline-danger float-end">Logout</a>
 <a href="{% url 'book_lesson' %}" class="btn btn-primary mb-3">Book New Lesson</a>
 <a href="{% url 'calendar_view' %}" class="btn btn-outline-primary mb-3">View My Calendar</a>
+<a href="{% url 'student_profile' %}" class="btn btn-outline-info mb-3">View My Details</a>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -54,24 +55,45 @@
         </tbody>
     </table>
 
-    <h3 class="mt-4">Past Lessons</h3>
-    <table class="table table-striped">
-        <thead>
-            <tr><th>Date</th><th>Time</th><th>Instructor</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-            {% for booking in past %}
-            <tr>
-                <td>{{ booking.date }}</td>
-                <td>{{ booking.time }}</td>
-                <td>{{ booking.instructor.username }}</td>
-                <td>{{ booking.status }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4">No past lessons yet</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <br>
+
+    <!-- Toggle Button -->
+    <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#pastLessonsCollapse" aria-expanded="false" aria-controls="pastLessonsCollapse">
+        Show/Hide Past Lessons
+    </button>
+
+    <!-- Collapsible Content -->
+    <div class="collapse" id="pastLessonsCollapse">
+        <h3 class="mt-3">Past Lessons</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr><th>Date</th><th>Time</th><th>Instructor</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for booking in past %}
+                <tr>
+                    <td>{{ booking.date }}</td>
+                    <td>{{ booking.time }}</td>
+                    <td>{{ booking.instructor.username }}</td>
+                    <td>
+                        {% if booking.status == "booked" %}
+                            <span class="badge bg-warning">{{ booking.status|capfirst }}</span>
+                        {% elif booking.status == "completed" %}
+                            <span class="badge bg-success">{{ booking.status|capfirst }}</span>
+                        {% elif booking.status == "cancelled" %}
+                            <span class="badge bg-danger">{{ booking.status|capfirst }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ booking.status|capfirst }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4">No past lessons yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
     
 </div>
     

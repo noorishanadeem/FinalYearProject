@@ -142,7 +142,29 @@
     </div>
 </div>
 
-
+<div class="row mt-4 mb-4 px-3">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Weekly Summary</h5>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#weeklySummaryContent" aria-expanded="false" aria-controls="weeklySummaryContent">
+                    Toggle
+                </button>
+            </div>
+            <div class="collapse show" id="weeklySummaryContent">
+                <div class="card-body text-center">
+                    <p class="fs-5 text-success mb-1">
+                        <strong>Hours Completed:</strong> {{ weekly_hours }} hour{{ weekly_hours|pluralize }}
+                    </p>
+                    <p class="fs-5 text-primary mb-0">
+                        <strong>Pay this Week:</strong> €{{ weekly_pay }}
+                    </p>
+                    <small class="text-muted">Calculated from completed lessons (1hr = €55)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 

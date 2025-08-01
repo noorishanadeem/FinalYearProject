@@ -143,9 +143,12 @@ def book_lesson(request):
     return render(request, 'dashboard/book_lesson.html', {'form': form})
 
 
-
+@login_required
 def cancel_booking(request, booking_id):
-    booking = get_object_or_404(Booking, id=booking_id, student=request.user)
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.user != booking.student and request.user != booking.instructor:
+        return render(request, '403.html')
 
     if request.method == 'POST':
         booking.status = 'cancelled'
@@ -167,7 +170,12 @@ def cancel_booking(request, booking_id):
             html_message=message,
         )
 
-    return HttpResponseRedirect(reverse('student_dashboard'))
+    if request.user.role == 'student':
+        return redirect('student_dashboard')
+    elif request.user.role == 'instructor':
+        return redirect('instructor_dashboard')
+    else:
+        return redirect('home')
 
 @login_required
 def student_dashboard(request):
@@ -183,8 +191,20 @@ def student_dashboard(request):
     })
 
 @login_required
+def student_profile_view(request):
+    if request.user.role != 'student':
+        return render(request, '403.html')
+    
+    student = request.user
+    return render(request, 'dashboard/student_profile.html', {'student': student})
+
+@login_required
 def reschedule_booking(request, booking_id):
-    booking = get_object_or_404(Booking, id=booking_id, student=request.user)
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    # only allow if current user is student/instructor linked to this booking
+    if request.user != booking.student and request.user != booking.instructor:
+        return render(request, '403.html')
 
     if request.method == 'POST':
         form = BookingForm(request.POST, instance=booking, student=request.user)
@@ -206,7 +226,17 @@ def reschedule_booking(request, booking_id):
                 fail_silently=False,
                 html_message=message,
             )
-            return redirect('student_dashboard')
+
+            # redirect based on role
+            if request.user.role == 'student':
+                return redirect('student_dashboard')
+            elif request.user.role == 'instructor': 
+                return redirect('instructor_dashboard')
+            elif request.user.is_staff:
+                return redirect('admin_dashboard')
+            else:
+                return redirect('home')
+            
     else:
         form = BookingForm(instance=booking, student=request.user)
 
@@ -558,10 +588,17 @@ def edit_student_profile(request):
     
 @login_required
 def edit_instructor_profile(request):
-    form = InstructorProfileForm(instance=request.user)
+    if request.user.role != 'instructor':
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("You are not authorized to view this page.")
+    
     if request.method == 'POST':
         form = InstructorProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            return redirect('instructor_profile')
-        return render(request, 'dashboard/edit_instructor_profile.html', {'form': form})
+            messages.success(request, "Profile updated successfully.")
+            return redirect('instructor_dashboard')
+        else:
+            form = InstructorProfileForm(instance=request.user)
+
+        return render(request, 'dashboard/edit_instructor_profile.html', {'form': form}) 
