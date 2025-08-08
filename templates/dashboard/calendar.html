@@ -66,11 +66,16 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
           modalHtml += `
             <a href="/dashboard/reschedule/${bookingId}/" class="btn btn-primary">Reschedule</a>
-            <form method="post" action="/dashboard/cancel/${bookingId}/" style="display:inline;">
-              <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-              <button type="submit" class="btn btn-danger">Cancel</button>
-            </form>
           `;
+
+          if (event.extendedProps.status !== 'cancelled') {
+            modalHtml += `
+              <form method="post" action="/dashboard/cancel/${bookingId}/" style="display:inline;">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <button class="btn btn-danger btn-sm">Cancel</button>
+              </form>
+            `;
+          }
         }
 
         modalHtml += `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>`;

@@ -18,6 +18,57 @@
 <div class="container mt-4">
     <h1>Instructor Dashboard</h1>
 
+    <!-- reviews button -->
+    {% if pending_count %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center mt-3">
+        <div>
+            <strong>{{ pending_count }}</strong>
+            completed lesson{{ pending_count|pluralize }} need{{ pending_count|pluralize:"s" }} a review.
+        </div>
+
+        <!-- quick action to review most recent pending one -->
+        <div class="d-flex align-items-center">
+            {% if pending_reviews.0.status == "completed" %}
+                <a href="{% url 'leave_review' pending_reviews.0.id %}" class="btn btn-info btn-sm me-2">
+                    Leave Review (Latest)
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- or to pick specific one -->
+        <div class="btn-group">
+            <button class="btn btn-sm btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                Pick Lesson
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                {% for b in pending_reviews|slice:"10" %}
+                    {% if b.status == "completed" %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'leave_review' b.id %}">
+                                {{ b.date }} {{ b.time }} - {{ b.student.username }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- messages -->
+    {% if messages %}
+    <div class="mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+
     <a href="{% url 'instructor_calendar' %}" class="btn btn-outline-primary mb-3">View My Calendar</a>
     <a href="{% url 'instructor_students_list' %}" class="btn btn-outline-secondary mb-3">View My Students</a>
 
@@ -98,6 +149,7 @@
                 <th>Time</th>
                 <th>Student</th>
                 <th>Status</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -114,6 +166,13 @@
                         <span class="badge bg-danger">{{ lesson.status|capfirst }}</span>
                     {% else %}
                         <span class="badge bg-secondary">{{ lesson.status|capfirst }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if lesson.status == "completed" and not lesson.review %}
+                        <a href="{% url 'leave_review' lesson.id %}" class="btn btn-outline-info btn-sm">Leave Review</a>
+                    {% elif lesson.review %}
+                        <span class="text-muted small">Review Added</span>
                     {% endif %}
                 </td>
             </tr>

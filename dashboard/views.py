@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 
 from django.shortcuts import render, redirect, get_object_or_404
 from bookings.models import Booking
-from django.utils import timezone
+from django.utils import timezone 
+from django.utils.timezone import now, make_aware, is_naive
 
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -42,8 +43,10 @@ from datetime import datetime
 from collections import Counter
 import calendar
 
-from datetime import date, timedelta
+from datetime import datetime, timedelta, date
 
+from .forms import ReviewForm
+from .models import Review
 
 @login_required 
 def calendar_view(request):
@@ -142,20 +145,48 @@ def book_lesson(request):
 
     return render(request, 'dashboard/book_lesson.html', {'form': form})
 
-
 @login_required
 def cancel_booking(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
 
+    # permission check: only student/instructor can cancel
     if request.user != booking.student and request.user != booking.instructor:
         return render(request, '403.html')
 
+    if not booking.time:
+        messages.error(request, "This booking has no time set. Unable to cancel.")
+        return redirect('student_dashboard')
+
+    # Combine date and time into a single datetime
+    lesson_datetime = datetime.combine(booking.date, booking.time)
+
+    # Make lesson_datetime timezone-aware
+    if is_naive(lesson_datetime):
+        lesson_datetime = make_aware(lesson_datetime)
+
+    current_time = now()
+
+    # Debugging output (to be removed later)
+    print("Booking datetime:", lesson_datetime)
+    print("Current time:", current_time)
+    print("Time until lesson:", lesson_datetime - current_time)
+
+    if lesson_datetime - current_time < timedelta(hours=48):
+        messages.error(request, "You can only cancel a lesson more than 48 hours before its scheduled time.")
+        if request.user.role == 'student':
+            return redirect('student_dashboard')
+        elif request.user.role == 'instructor':
+            return redirect('instructor_dashboard')
+        else:
+            return redirect('home')
+
+    # POST request means actually cancel it
     if request.method == 'POST':
         booking.status = 'cancelled'
         booking.save()
         messages.success(request, "Lesson cancelled successfully.")
-        
-        # send email
+
+        # Send email
         subject = "Lesson Cancelled"
         message = render_to_string('email/lesson_cancelled.html', {
             'user': request.user,
@@ -170,6 +201,7 @@ def cancel_booking(request, booking_id):
             html_message=message,
         )
 
+    # Redirect based on role
     if request.user.role == 'student':
         return redirect('student_dashboard')
     elif request.user.role == 'instructor':
@@ -177,10 +209,11 @@ def cancel_booking(request, booking_id):
     else:
         return redirect('home')
 
+
 @login_required
 def student_dashboard(request):
     user = request.user
-    today = timezone.now().date()
+    today = now().date()
 
     upcoming = Booking.objects.filter(student=user, date__gte=today, status='booked').order_by('date')
     past = Booking.objects.filter(student=user, date__lt=today).order_by('-date')
@@ -189,6 +222,7 @@ def student_dashboard(request):
         'upcoming': upcoming,
         'past': past,
     })
+
 
 @login_required
 def student_profile_view(request):
@@ -271,6 +305,20 @@ def instructor_dashboard(request):
     completed_lessons = Booking.objects.filter(instructor=instructor, status='completed').count()
     cancelled_lessons = Booking.objects.filter(instructor=instructor, status='cancelled').count()
     todays_lessons = Booking.objects.filter(instructor=instructor, date=today).order_by('time')
+
+    # completed lessons without a review yet
+    pending_reviews = (
+        Booking.objects
+        .filter(
+            instructor=instructor,
+            status='completed',
+            date__lte=today,
+            review__isnull=True
+        )
+        .order_by('-date', '-time')
+    )
+    pending_count = pending_reviews.count()
+    pending_first = pending_reviews.first()
     
     return render(request, 'dashboard/instructor_dashboard.html', {
         'total_bookings': total_bookings,
@@ -280,7 +328,11 @@ def instructor_dashboard(request):
         'todays_lessons': todays_lessons,
         'weekly_hours': weekly_hours,
         'weekly_pay': weekly_pay,
+        'pending_reviews': pending_reviews,
+        'pending_count': pending_count,
+        'pending_first': pending_first
     })
+
 
 @login_required
 def instructor_calendar(request):
@@ -602,3 +654,36 @@ def edit_instructor_profile(request):
             form = InstructorProfileForm(instance=request.user)
 
         return render(request, 'dashboard/edit_instructor_profile.html', {'form': form}) 
+    
+@login_required
+def leave_review(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, instructor=request.user)
+
+    if booking.status != 'completed':
+        messages.error(request, "you can only review completed lessons.")
+        return redirect('instructor_dashboard')
+    
+    # prevent duplicate reviews
+    if Review.objects.filter(booking=booking).exists():
+        messages.info(request, "A review already exists for this lesson.")
+        return redirect('instructor_dashboard')
+    
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.booking = booking
+            review.instructor = request.user
+            review.save()
+
+            messages.success(request, "Review submitted.")
+            return redirect('instructor_dashboard')
+    else:
+        form = ReviewForm()
+
+
+    return render(request, 'dashboard/leave_review.html', {
+        'form': form, 
+        'booking': booking
+    })
+        

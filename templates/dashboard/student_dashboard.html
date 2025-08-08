@@ -21,11 +21,11 @@
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
-                    <button type="button", class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         </div>
-        {% endif %}
+    {% endif %}
 
     <h3 class="mt-4">Upcoming Lessons</h3>
     <table class="table table-boarded">
@@ -33,25 +33,36 @@
             <tr><th>Date</th><th>Time</th><th>Instructor</th><th>Actions</th></tr>
         </thead>
         <tbody>
-            {% for booking in upcoming %}
-            <tr>
-                <td>{{ booking.date }}</td>
-                <td>{{ booking.time }}</td>
-                <td>{{ booking.instructor.username }}</td>
-                <td>
-                    <!-- adds reschedule lesson -->
-                     <a href="{%url 'reschedule_booking' booking.id %}" class="btn btn-outline-primary btn-sm">Reschedule</a>
+        {% for booking in upcoming %}
+        <tr>
+            <td>{{ booking.date }}</td>
+            <td>{{ booking.time }}</td>
+            <td>{{ booking.instructor.username }}</td>
+            <td>
+                <!-- Reschedule always available -->
+                <a href="{% url 'reschedule_booking' booking.id %}" class="btn btn-outline-primary btn-sm">Reschedule</a>
 
-                    <!-- adds cancel lesson -->
-                    <form method="post" action="{% url 'cancel_booking' booking.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button class="btn btn-danger btn-sm">Cancel</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4">No upcoming lessons</td></tr>
-            {% endfor %}
+                {% if booking.status != "cancelled" %}
+                    {% with lesson_datetime=booking.date|stringformat:"s"|add:" "|add:booking.time|stringformat:"s" %}
+                        {% with lesson_dt=lesson_datetime|date:"U" %}
+                            {% with now_ts=now|date:"U" %}
+                                {% if lesson_dt|add:"-172800" > now_ts %}
+                                    <!-- 172800 seconds = 48 hours -->
+                                    <form method="post" action="{% url 'cancel_booking' booking.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button class="btn btn-danger btn-sm">Cancel</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small">Cancellation Closed</span>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% endwith %}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+
         </tbody>
     </table>
 
