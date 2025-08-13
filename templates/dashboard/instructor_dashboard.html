@@ -1,3 +1,6 @@
+<!-- navbar -->
+{% include 'dashboard/navbar.html' %}
+
 <!-- Logout Button -->
 <div class="d-flex justify-content-end me-3 mt-2">
     <a href="{% url 'logout' %}" class="btn btn-outline-danger">Logout</a>
@@ -69,8 +72,10 @@
     {% endif %}
 
 
+    <!-- buttons -->
     <a href="{% url 'instructor_calendar' %}" class="btn btn-outline-primary mb-3">View My Calendar</a>
     <a href="{% url 'instructor_students_list' %}" class="btn btn-outline-secondary mb-3">View My Students</a>
+    <a href="{% url 'my_reviews' %}" class="btn btn-outline-info mb-3">My Reviews</a>
 
     <!-- other features -->
 
@@ -150,6 +155,7 @@
                 <th>Student</th>
                 <th>Status</th>
                 <th>Actions</th>
+                <th>Rating</th>
             </tr>
         </thead>
         <tbody>
@@ -173,6 +179,16 @@
                         <a href="{% url 'leave_review' lesson.id %}" class="btn btn-outline-info btn-sm">Leave Review</a>
                     {% elif lesson.review %}
                         <span class="text-muted small">Review Added</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {# Leave review button / tag (you already have this) #}
+                    {% if lesson.status == "completed" and not lesson.review %}
+                        <a href="{% url 'leave_review' lesson.id %}" class="btn btn-outline-info btn-sm">Leave Review</a>
+                    {% elif lesson.review %}
+                        <span class="badge bg-light text-dark border">
+                            ★ {{ lesson.review.rating }}/5
+                        </span>
                     {% endif %}
                 </td>
             </tr>

@@ -40,4 +40,7 @@ urlpatterns = [
     path('', views.dashboard_home_redirect),
 
     path('dashboard/leave-review/<int:booking_id>/', views.leave_review, name='leave_review'),
+    path('instructor/reviews/', views.my_reviews, name='my_reviews'),
+    path('instructor/reviews/<int:pk>/edit/', views.edit_review, name='edit_review'),
+    path('instructor/reviews/<int:ok>/delete', views.delete_review, name='delete_review'),
 ]

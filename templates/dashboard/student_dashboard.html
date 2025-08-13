@@ -1,3 +1,6 @@
+<!-- navbar-->
+{% include 'dashboard/navbar.html' %}
+
 <a href="{% url 'logout' %}" class="btn btn-outline-danger float-end">Logout</a>
 <a href="{% url 'book_lesson' %}" class="btn btn-primary mb-3">Book New Lesson</a>
 <a href="{% url 'calendar_view' %}" class="btn btn-outline-primary mb-3">View My Calendar</a>
@@ -104,6 +107,83 @@
             </tbody>
         </table>
     </div>
+
+    <!-- progress bar + chart -->
+    <hr class="my-4">
+
+    <h3 class="mt-4">Your Progress</h3>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Completed Lessons per Month</h6>
+                    <canvas id="progressChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="mb-3">Goal Progress</h6>
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Total Completed: <strong>{{ total_completed }}</strong></small>
+                        <small>Goal: <strong>{{ goal }}</strong></small>
+                    </div>
+                    <div class="progress" style="height: 18px;">
+                        <div class="progress-bar" role="progressbar"
+                            style="width: {{ progress_pct }}%;"
+                            aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ progress_pct }}%
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">1 lesson = 1 hour</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+    (function () {
+        const labels = {{ progress_labels_json|safe }};
+        const data = {{ progress_data_json|safe }};
+
+        const ctx = document.getElementById('progressChart');
+        if (!ctx) return;
+
+        new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+            label: 'Completed Lessons',
+            data,
+            fill: false,
+            borderWidth: 2,
+            tension: 0.25,
+            pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+        });
+    })();
+    </script>
+
+
+
 
     
 </div>

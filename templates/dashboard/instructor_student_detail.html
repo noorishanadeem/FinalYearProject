@@ -11,6 +11,16 @@
             <br>
             <p><strong>Username: </strong> {{ student.username }}</p>
             <p><strong>Email: </strong> {{ student.email }}</p>
+
+            <!-- average rating -->
+            <p class="mb-0">
+                <strong>Average Rating (you → this student):</strong>
+                {% if avg_rating %}
+                    <span class="badge bg-light text-dark border">★ {{ avg_rating|floatformat:1 }}/5</span>
+                {% else %}
+                    <span class="text-muted">No Reviews yet</span>
+                {% endif %}
+            </p>
         </div>
     </div>
 
@@ -39,6 +49,31 @@
         </ul>
     </div>
 
+    <!-- progress goal bar -->
+     <div class="row g-3 mt-3">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 mb-3>GoalProgress</h6>
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Total Completed: <strong>{{ total_completed }}</strong></small>
+                        <small>Goal: <strong>{{ goal }}</strong></small>
+                    </div>
+                    <div class="progress" style="height: 18px;">
+                        <div class="progress-bar" role="progressbar"
+                            style="width: {{ progress_pct }}%;"
+                            aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ progress_pct }}%
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">1 lesson = 1 hour</small>
+                </div>
+            </div>
+        </div>
+     </div>
+
+    <br>
+
     <!-- Pie chart -->
     <div class="mb-4">
         <h5>Lesson Status Chart</h5>
@@ -57,6 +92,27 @@
         <canvas id="lessonsOverTimeChart" width="400" height="200"></canvas>
     </div>
 
+    <!-- progress charts -->
+    <div class="row g-3 mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Completed Lessons per Month (Line)</h6>
+                    <canvas id="studentProgressLine" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Completed Lessons per Month (Bar)</h6>
+                    <canvas id="studentProgressBar" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Lesson Table -->
     <br>
     <h5>Lessons with {{ student.get_full_name }}</h5>
@@ -66,6 +122,7 @@
                 <th>Date</th>
                 <th>Time</th>
                 <th>Status</th>
+                <th>Review</th>
             </tr>
         </thead>
         <tbody>
@@ -83,6 +140,14 @@
                     {% else %}
                         <span class="badge bg-secondary">{{ lesson.status|capfirst }}</span>
                     {% endif %}
+                </td>
+                <td>{{ lesson.status|capfirst }}</td>
+                <td>
+                    {% if lesson.review %}
+                        <span class="badge bg-light text-dark border">★ {{ lesson.review.rating}}/5</span>
+                    {% else %}
+                        <span class="text-muted small">No Review</span>
+                    {% endif%}
                 </td>
             </tr>
             {% empty %}
@@ -195,4 +260,75 @@
         }
     });
 </script>
+
+
+<!-- Chart.js (only include once on the page) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+  (function () {
+    const labels = {{ progress_labels_json|safe }};
+    const data   = {{ progress_data_json|safe }};
+
+    // Guard: nothing to show
+    if (!labels || !labels.length) return;
+
+    // Line chart
+    const lineEl = document.getElementById('studentProgressLine');
+    if (lineEl) {
+      new Chart(lineEl, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Completed Lessons',
+            data,
+            fill: false,
+            borderWidth: 2,
+            tension: 0.25,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+    // Bar chart
+    const barEl = document.getElementById('studentProgressBar');
+    if (barEl) {
+      new Chart(barEl, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Completed Lessons',
+            data,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+  })();
+</script>
+
+
 {% endblock %}
+

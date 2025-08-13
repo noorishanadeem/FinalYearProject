@@ -48,6 +48,10 @@ from datetime import datetime, timedelta, date
 from .forms import ReviewForm
 from .models import Review
 
+from django.db.models import Avg
+
+import json
+
 @login_required 
 def calendar_view(request):
     return render(request, 'dashboard/calendar.html')
@@ -215,12 +219,40 @@ def student_dashboard(request):
     user = request.user
     today = now().date()
 
-    upcoming = Booking.objects.filter(student=user, date__gte=today, status='booked').order_by('date')
-    past = Booking.objects.filter(student=user, date__lt=today).order_by('-date')
+    upcoming = (Booking.objects
+                .filter(student=user, date__gte=today, status='booked')
+                .order_by('date'))
+    
+    past = (Booking.objects
+            .filter(student=user, date__lt=today)
+            .order_by('-date'))
+    
+    # progress: completed lessons per month (for this student)
+    completed_qs = (Booking.objects
+                    .filter(student=user, status='completed'))
+    
+    monthly = (completed_qs
+               .annotate(month=TruncMonth('date'))
+               .values('month')
+               .annotate(c=Count('id'))
+               .order_by('month'))
+    
+    labels = [entry['month'].strftime('%b %Y') for entry in monthly if entry['month']]
+    data = [entry['c'] for entry in monthly]
+
+    total_completed = completed_qs.count()
+    GOAL = 12
+    progress_pct = int(min(100, (total_completed / GOAL) * 100)) if GOAL else 0
+
 
     return render(request, 'dashboard/student_dashboard.html', {
         'upcoming': upcoming,
         'past': past,
+        'progress_labels_json':json.dumps(labels),
+        'progress_data_json': json.dumps(data),
+        'total_completed': total_completed,
+        'goal': GOAL,
+        'progress_pct': progress_pct
     })
 
 
@@ -530,6 +562,38 @@ def instructor_student_detail(request, student_id):
     month = [entry['month'].strftime('%b %Y') for entry in monthly_counts]
     lesson_counts = [entry['count'] for entry in monthly_counts]
 
+    # computes average on instructor to student detail page
+    avg_rating = (
+        Review.objects
+        .filter(instructor=request.user, booking__student=student)
+        .aggregate(avg=Avg('rating'))
+        .get('avg')
+    )
+
+    # progress charts
+    completed_qs = lessons.filter(status='completed')
+
+    monthly_completed = (
+        completed_qs
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(total=Count('id'))
+        .order_by('month')
+    )
+
+    progress_labels = [entry['month'].strftime('%b %Y') for entry in monthly_completed]
+    progress_data = [entry['total'] for entry in monthly_completed]
+
+    # JSON for Chart.js
+    progress_labels_json = json.dumps(progress_labels)
+    progress_data_json = json.dumps(progress_data)
+
+    # progress bar - goals
+    total_completed = lessons.filter(status='completed').count()
+    goal = 12
+    progress_pct = int(round((total_completed / goal) * 100)) if goal else 0
+    progress_pct = max(0, min(progress_pct, 100))
+    
     return render(request, 'dashboard/instructor_student_detail.html', {
         'student': student,
         'lessons': lessons,
@@ -537,7 +601,14 @@ def instructor_student_detail(request, student_id):
         'status_counts': status_counts,
         'months': months,
         'lesson_counts': lesson_counts,
-        'request': request
+        'request': request,
+        'avg_rating': avg_rating,
+        'progress_labels_json': progress_labels_json,
+        'progress_data_json': progress_data_json,
+        'total_completed': total_completed,
+        'goal': goal,
+        'progress_pct': progress_pct
+
     })
 
 @staff_member_required
@@ -686,4 +757,44 @@ def leave_review(request, booking_id):
         'form': form, 
         'booking': booking
     })
-        
+
+@login_required
+def my_reviews(request):
+    if request.user.role != 'instructor':
+        return render(request, '403.html')
+    reviews = (
+        Review.objects#
+        .filter(instructor=request.user)
+        .select_related('booking__student')
+        .order_by('-created_at')
+    )
+    return render(request, 'dashboard/my_reviews.html', {'reviews': reviews})
+
+@login_required
+def edit_review(request, pk):
+    if request.user.role != 'instructor':
+        return render(request, '403.html')
+    review = get_object_or_404(Review, pk=pk, instructor=request.user)
+    if request.method == 'POST':
+        form = ReviewForm(request.POST,instance=review)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Review Updated")
+            return redirect('my_reviews')
+        else: 
+            form = ReviewForm(instance=review)
+        return render(request, 'dashboard/edit_review.html', {'form': form, 'review': review})
+    
+
+@login_required
+def delete_review(request, pk):
+    if request.user.role != 'instructor':
+        return render (request, '403.html')
+    review = get_object_or_404(Review, pk=pk, instructor=request.user)
+    if request.method == 'POST':
+        review.delete()
+        messages.success(request, "Review deleted")
+        return  redirect('my_reviews')
+    return render(request, 'dashboard/delete_review_confirm.html', {'review': review})
+    
+    
